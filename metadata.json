@@ -1,0 +1,6 @@
+{
+  "name": "Walls Engine",
+  "description": "Walls Engine is a premium, free wallpaper platform with auto changer, editor, favorites, offline cache, search, and more.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
