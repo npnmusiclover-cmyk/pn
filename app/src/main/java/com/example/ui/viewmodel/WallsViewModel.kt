@@ -342,4 +342,68 @@ class WallsViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    fun addWallpaperToFirebase(
+        title: String,
+        category: String,
+        imageResName: String,
+        isLive: Boolean,
+        is4K: Boolean,
+        resolution: String,
+        fileSize: String,
+        colors: String,
+        tags: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val db = FirebaseFirestore.getInstance()
+                val wallMap = hashMapOf(
+                    "title" to title,
+                    "category" to category,
+                    "imageResName" to imageResName,
+                    "isLive" to isLive,
+                    "is4K" to is4K,
+                    "resolution" to resolution,
+                    "fileSize" to fileSize,
+                    "colors" to colors,
+                    "tags" to tags,
+                    "isOffline" to false
+                )
+                db.collection("wallpapers")
+                    .add(wallMap)
+                    .addOnSuccessListener {
+                        onSuccess()
+                    }
+                    .addOnFailureListener {
+                        onFailure(it)
+                    }
+            } catch (e: Exception) {
+                onFailure(e)
+            }
+        }
+    }
+
+    fun deleteWallpaperFromFirebase(
+        id: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val db = FirebaseFirestore.getInstance()
+                db.collection("wallpapers").document(id)
+                    .delete()
+                    .addOnSuccessListener {
+                        onSuccess()
+                    }
+                    .addOnFailureListener {
+                        onFailure(it)
+                    }
+            } catch (e: Exception) {
+                onFailure(e)
+            }
+        }
+    }
 }

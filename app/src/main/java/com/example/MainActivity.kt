@@ -53,14 +53,21 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun WallsAppOrchestrator(viewModel: WallsViewModel) {
     // Basic navigation state
-    // "main" -> "detail" -> "editor"
-    var currentScreenState by remember { mutableStateOf("main") }
+    // "loading" -> "main" -> "detail" -> "editor"
+    var currentScreenState by remember { mutableStateOf("loading") }
     var bottomNavSelectedTab by remember { mutableStateOf("home") }
 
     val settings by viewModel.appSettings.collectAsStateWithLifecycle()
 
     Crossfade(targetState = currentScreenState, label = "ScreenTransition") { screen ->
         when (screen) {
+            "loading" -> {
+                LoadingScreen(
+                    onFinished = {
+                        currentScreenState = "main"
+                    }
+                )
+            }
             "main" -> {
                 Scaffold(
                     bottomBar = {

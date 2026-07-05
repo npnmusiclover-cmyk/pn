@@ -18,6 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -33,8 +36,326 @@ import com.example.data.WallpaperEntity
 import com.example.ui.components.TranslationHelper
 import com.example.ui.components.WallpaperImage
 import com.example.ui.viewmodel.WallsViewModel
+import com.example.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+
+@Composable
+fun LoadingScreen(onFinished: () -> Unit) {
+    var progress by remember { mutableStateOf(0f) }
+    var statusText by remember { mutableStateOf("Initializing database engine...") }
+    var startAnim by remember { mutableStateOf(false) }
+
+    // Spring scaling for premium bouncy logo entry
+    val logoScale by animateFloatAsState(
+        targetValue = if (startAnim) 1f else 0.4f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "LogoScale"
+    )
+
+    val logoAlpha by animateFloatAsState(
+        targetValue = if (startAnim) 1f else 0f,
+        animationSpec = tween(durationMillis = 800, easing = EaseOutQuart),
+        label = "LogoAlpha"
+    )
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 2400, easing = LinearOutSlowInEasing),
+        label = "LoadingProgress"
+    )
+
+    LaunchedEffect(Unit) {
+        startAnim = true
+        // Smoothly update progress
+        launch {
+            while (progress < 1f) {
+                delay(30)
+                progress += 0.015f
+                if (progress >= 1f) progress = 1f
+            }
+        }
+    }
+
+    LaunchedEffect(animatedProgress) {
+        statusText = when {
+            animatedProgress < 0.25f -> "Initializing database engine..."
+            animatedProgress < 0.50f -> "Loading high-resolution catalog..."
+            animatedProgress < 0.75f -> "Syncing cloud endpoints..."
+            animatedProgress < 0.92f -> "Optimizing visual interface..."
+            else -> "Welcome to Walls Engine!"
+        }
+        if (animatedProgress >= 1f) {
+            delay(500)
+            onFinished()
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF08090C),
+                        Color(0xFF0F1115),
+                        Color(0xFF08090C)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        // Ambient glow transition
+        val infiniteTransition = rememberInfiniteTransition(label = "SplashGlow")
+        val glowScale by infiniteTransition.animateFloat(
+            initialValue = 0.9f,
+            targetValue = 1.3f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(5000, easing = EaseInOutQuad),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "GlowScale"
+        )
+
+        val rotationAngle by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(10000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "RotationAngle"
+        )
+
+        // Cosmic background atmospheric rings
+        Box(
+            modifier = Modifier
+                .size(450.dp)
+                .scale(glowScale)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF3B82F6).copy(alpha = 0.08f),
+                            Color(0xFF60A5FA).copy(alpha = 0.03f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
+        // Subtle concentric vector rings drawn behind the logo
+        Canvas(modifier = Modifier.size(320.dp)) {
+            val centerOffset = Offset(size.width / 2f, size.height / 2f)
+            drawCircle(
+                color = Color.White.copy(alpha = 0.02f),
+                radius = 120.dp.toPx(),
+                center = centerOffset,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.015f),
+                radius = 180.dp.toPx(),
+                center = centerOffset,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Top spacing placeholder
+            Spacer(modifier = Modifier.height(1.dp))
+
+            // Central Logo Column
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Interactive Rotating Outer Halo + App Icon
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .scale(logoScale)
+                        .alpha(logoAlpha)
+                ) {
+                    // Outer slowly spinning indicator halo
+                    Box(
+                        modifier = Modifier
+                            .size(136.dp)
+                            .rotate(rotationAngle)
+                            .border(
+                                width = 1.5.dp,
+                                brush = Brush.sweepGradient(
+                                    colors = listOf(
+                                        Color(0xFF3B82F6),
+                                        Color(0xFF60A5FA).copy(alpha = 0.1f),
+                                        Color(0xFF3B82F6).copy(alpha = 0.8f),
+                                        Color(0xFF60A5FA).copy(alpha = 0.1f),
+                                        Color(0xFF3B82F6)
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
+                    )
+
+                    // Inner glowing circular frame
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .background(Color(0xFF13151A), CircleShape)
+                            .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape)
+                            .padding(2.dp)
+                    )
+
+                    // Elegant glowing App logo
+                    Box(
+                        modifier = Modifier
+                            .size(108.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.05f))
+                            .padding(14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.img_app_icon_1783227864457),
+                            contentDescription = "App Logo",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(14.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = "Walls Engine",
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    letterSpacing = 1.8.sp,
+                    modifier = Modifier
+                        .scale(logoScale)
+                        .alpha(logoAlpha)
+                )
+
+                Text(
+                    text = "YOUR ULTIMATE WALLPAPER HUB",
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF60A5FA),
+                    letterSpacing = 3.sp,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .alpha(logoAlpha)
+                )
+            }
+
+            // Lower Section: Progress Engine & Security Badging
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
+            ) {
+                // Premium Sleek Linear Progress Bar
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.width(260.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(5.dp)
+                            .clip(RoundedCornerShape(100))
+                            .background(Color.White.copy(alpha = 0.08f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(animatedProgress)
+                                .clip(RoundedCornerShape(100))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(Color(0xFF2563EB), Color(0xFF60A5FA))
+                                    )
+                                )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Smooth Crossfade for Status text
+                    AnimatedContent(
+                        targetState = statusText,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(220))
+                        },
+                        label = "StatusTextAnimation"
+                    ) { text ->
+                        Text(
+                            text = text,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White.copy(alpha = 0.65f),
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "${(animatedProgress * 100).toInt()}%",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF60A5FA)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                // Professional trust footnote block
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.alpha(0.45f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Security,
+                        contentDescription = "Verified Sync",
+                        tint = Color.White,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = "SECURE CLOUD SYNC ACTIVE",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 1.2.sp
+                    )
+                }
+
+                Text(
+                    text = "v3.2.0 • Made with Passion",
+                    fontSize = 9.5.sp,
+                    color = Color.White.copy(alpha = 0.25f),
+                    modifier = Modifier.padding(top = 4.dp),
+                    letterSpacing = 0.5.sp
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun LoginScreen(viewModel: WallsViewModel, onLoginSuccess: () -> Unit) {
